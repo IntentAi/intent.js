@@ -1,0 +1,23 @@
+{
+  "name": "intent.js",
+  "version": "0.1.0",
+  "description": "JavaScript/TypeScript bot SDK for Intent (discord.js compatible)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "echo 'Build coming soon'",
+    "test": "echo 'Tests coming soon'"
+  },
+  "keywords": [
+    "intent",
+    "bot",
+    "discord",
+    "chat"
+  ],
+  "author": "IntentAi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IntentAi/intent.js.git"
+  }
+}
