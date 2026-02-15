@@ -14,7 +14,17 @@
 // export { User } from './structures/User';
 
 // REST exports
-// export { REST } from './rest/REST';
+export { REST } from './rest';
+export type { RequestMethod } from './rest';
+export {
+  IntentError,
+  HTTPError,
+  RateLimitError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ServerError,
+} from './rest';
 
 // Gateway exports
 // export { Gateway } from './gateway/Gateway';
@@ -24,6 +34,3 @@
 
 // Version
 export const version = '0.1.0';
-
-// Placeholder to ensure module compiles
-export {};
