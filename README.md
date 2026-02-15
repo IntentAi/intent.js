@@ -1,79 +1,50 @@
 # intent.js
 
-JavaScript/TypeScript bot SDK for Intent.
-
-**Designed to mirror discord.js patterns** for easy bot migration.
+TypeScript bot SDK for Intent. Familiar patterns if you know discord.js.
 
 ## Status
 
- **Phase 1 Development** - SDK being built.
+Early development. Scaffolding complete, SDK implementation in progress.
 
-## Why intent.js?
+## Quick Example
 
-Communities won't migrate without their bots. intent.js makes bot porting trivial:
+```typescript
+import { Client } from 'intent.js';
 
-```javascript
-// Change this:
-const { Client } = require('discord.js');
-
-// To this:
-const { Client } = require('intent.js');
-
-// Most of your code just works
-```
-
-Same class names, same method signatures, same event patterns as discord.js where possible.
-
-## Installation
-
-```bash
-npm install intent.js
-```
-
-(Coming soon)
-
-## Quick Start
-
-```javascript
-const { Client, GatewayIntentBits } = require('intent.js');
-
-const client = new Client({
- intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
-});
+const client = new Client();
 
 client.on('ready', () => {
- console.log(`Logged in as ${client.user.tag}`);
+  console.log(`Connected as ${client.user.username}`);
 });
 
 client.on('messageCreate', (message) => {
- if (message.content === '!ping') {
-  message.reply('Pong!');
- }
+  if (message.content === '!ping') {
+    message.channel.send('pong');
+  }
 });
 
-client.login('your-bot-token');
+client.login('bot_xxxxxxxxxxxxx');
 ```
 
-## Features
+## Key Differences from discord.js
 
-- discord.js-compatible API
-- MessagePack binary protocol
-- Full TypeScript support
-- Promise-based
-- Event-driven
+- Servers not guilds
+- No intents in Phase 1 (you get all events)
+- MessagePack encoding instead of JSON
+- Some snake_case fields (`display_name` vs `displayName`)
 
-## Migration from discord.js
+## Phase 1 Implementation
 
-See [examples/discord-migration](examples/discord-migration)
+Events: `ready`, `messageCreate`, `messageUpdate`, `messageDelete`, `serverCreate`, `channelCreate`
 
-## Documentation
+REST: Full CRUD for servers, channels, messages
 
-In development: Full API documentation
+## Development
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+```bash
+npm run build && npm run typecheck && npm run lint
+```
 
 ## License
 
-MIT License - See [LICENSE](LICENSE)
+MIT
