@@ -1,0 +1,15 @@
+rest:
+  - changed-files:
+      - any-glob-to-any-file: "src/rest/**"
+
+gateway:
+  - changed-files:
+      - any-glob-to-any-file: "src/gateway/**"
+
+client:
+  - changed-files:
+      - any-glob-to-any-file: "src/client/**"
+
+structures:
+  - changed-files:
+      - any-glob-to-any-file: "src/structures/**"

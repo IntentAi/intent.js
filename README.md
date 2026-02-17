@@ -1,74 +1,41 @@
 # intent.js
 
-JavaScript/TypeScript bot SDK for Intent.
+TypeScript bot SDK for [Intent](https://github.com/IntentAi/intent). Familiar API if you know discord.js.
 
-**Designed to mirror discord.js patterns** for easy bot migration.
+> Early development — REST client implemented, gateway and structures in progress.
 
-## Status
+## Example
 
- **Phase 1 Development** - SDK being built.
+```typescript
+import { Client } from 'intent.js';
 
-## Why intent.js?
-
-Communities won't migrate without their bots. intent.js makes bot porting trivial:
-
-```javascript
-// Change this:
-const { Client } = require('discord.js');
-
-// To this:
-const { Client } = require('intent.js');
-
-// Most of your code just works
-```
-
-Same class names, same method signatures, same event patterns as discord.js where possible.
-
-## Installation
-
-```bash
-npm install intent.js
-```
-
-(Coming soon)
-
-## Quick Start
-
-```javascript
-const { Client, GatewayIntentBits } = require('intent.js');
-
-const client = new Client({
- intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
-});
+const client = new Client();
 
 client.on('ready', () => {
- console.log(`Logged in as ${client.user.tag}`);
+  console.log(`Connected as ${client.user.username}`);
 });
 
 client.on('messageCreate', (message) => {
- if (message.content === '!ping') {
-  message.reply('Pong!');
- }
+  if (message.content === '!ping') {
+    message.channel.send('pong');
+  }
 });
 
-client.login('your-bot-token');
+client.login('bot_xxxxxxxxxxxxx');
 ```
 
-## Features
+## Differences from discord.js
 
-- discord.js-compatible API
-- MessagePack binary protocol
-- Full TypeScript support
-- Promise-based
-- Event-driven
+- Servers, not guilds
+- MessagePack encoding, not JSON
+- No intents filtering yet (you get all events)
 
-## Migration from discord.js
+## Development
 
-See [examples/discord-migration](examples/discord-migration)
-
-## Documentation
-
-In development: Full API documentation
+```bash
+npm install
+npm run build && npm run typecheck && npm run lint
+```
 
 ## Contributing
 
@@ -76,4 +43,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-MIT License - See [LICENSE](LICENSE)
+MIT
