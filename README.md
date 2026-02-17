@@ -1,12 +1,10 @@
 # intent.js
 
-TypeScript bot SDK for Intent. Familiar patterns if you know discord.js.
+TypeScript bot SDK for [Intent](https://github.com/IntentAi/intent). Familiar API if you know discord.js.
 
-## Status
+> Early development — REST client implemented, gateway and structures in progress.
 
-Early development. Scaffolding complete, SDK implementation in progress.
-
-## Quick Example
+## Example
 
 ```typescript
 import { Client } from 'intent.js';
@@ -26,24 +24,22 @@ client.on('messageCreate', (message) => {
 client.login('bot_xxxxxxxxxxxxx');
 ```
 
-## Key Differences from discord.js
+## Differences from discord.js
 
-- Servers not guilds
-- No intents in Phase 1 (you get all events)
-- MessagePack encoding instead of JSON
-- Some snake_case fields (`display_name` vs `displayName`)
-
-## Phase 1 Implementation
-
-Events: `ready`, `messageCreate`, `messageUpdate`, `messageDelete`, `serverCreate`, `channelCreate`
-
-REST: Full CRUD for servers, channels, messages
+- Servers, not guilds
+- MessagePack encoding, not JSON
+- No intents filtering yet (you get all events)
 
 ## Development
 
 ```bash
+npm install
 npm run build && npm run typecheck && npm run lint
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
