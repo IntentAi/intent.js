@@ -27,7 +27,8 @@ export {
 } from './rest';
 
 // Gateway exports
-// export { Gateway } from './gateway/Gateway';
+export { GatewayState, Opcodes, encode, decode } from './gateway';
+export type { GatewayPayload, IdentifyData, ReadyData, Opcode } from './gateway';
 
 // Builder exports
 // export { EmbedBuilder } from './builders/EmbedBuilder';
