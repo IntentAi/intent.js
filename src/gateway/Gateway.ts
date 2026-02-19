@@ -83,7 +83,7 @@ export class Gateway extends EventEmitter {
         properties: { os: process.platform, browser: 'intent.js', device: 'bot' },
       },
     };
-    this.ws!.send(encode(identify));
+    this.ws?.send(encode(identify));
   }
 
   private _onMessage(data: RawData, isBinary: boolean): void {
@@ -153,6 +153,7 @@ export class Gateway extends EventEmitter {
     this._beat();
     this.heartbeatTimer = setInterval(() => {
       if (this.awaitingAck && ++this.missed >= MAX_MISSED_HB) {
+        this._stopHeartbeat();
         this.ws?.close(1001, 'Heartbeat timeout');
         return;
       }

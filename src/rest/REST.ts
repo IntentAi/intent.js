@@ -1,6 +1,7 @@
 import { RateLimitBucket } from './RateLimitBucket';
 import { Route, RequestMethod } from './Route';
 import {
+  IntentError,
   HTTPError,
   RateLimitError,
   UnauthorizedError,
@@ -108,6 +109,10 @@ export class REST {
     path: string,
     options: RequestOptions = {}
   ): Promise<T> {
+    if (!this.token) {
+      throw new IntentError('No auth token set — call setToken() or pass token in constructor');
+    }
+
     const route = new Route(method, path);
     const bucket = this.getBucket(route);
 
@@ -116,11 +121,7 @@ export class REST {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         await this.waitForGlobalRateLimit();
-
-        // Only acquire bucket slot once per logical request (not per retry)
-        if (attempt === 0) {
-          await bucket.acquire();
-        }
+        await bucket.acquire();
 
         const response = await this.makeRequest(route, options);
         bucket.update(response.headers);

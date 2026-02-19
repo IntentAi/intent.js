@@ -1,3 +1,4 @@
+import type { ClientRef } from '../client/ClientRef';
 import type { RawChannel } from '../types';
 
 export class Channel {
@@ -10,7 +11,7 @@ export class Channel {
   readonly parentId: string | null;
   readonly createdAt: Date;
 
-  constructor(data: RawChannel) {
+  constructor(data: RawChannel, _client: ClientRef) {
     this.id        = data.id;
     this.serverId  = data.server_id;
     this.name      = data.name;

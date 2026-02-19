@@ -1,3 +1,4 @@
+import type { ClientRef } from '../client/ClientRef';
 import type { RawServer } from '../types';
 
 export class Server {
@@ -9,7 +10,7 @@ export class Server {
   readonly memberCount: number;
   readonly createdAt: Date;
 
-  constructor(data: RawServer) {
+  constructor(data: RawServer, _client: ClientRef) {
     this.id          = data.id;
     this.name        = data.name;
     this.ownerId     = data.owner_id;

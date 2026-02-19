@@ -4,7 +4,11 @@ interface QueuedRequest {
 }
 
 /**
- * Rate limit bucket for tracking requests to a specific route
+ * Rate limit bucket for tracking requests to a specific route.
+ *
+ * Uses a promise-chain mutex to serialize acquire() calls without
+ * busy-polling, and re-checks server state after sleeping so
+ * update() headers from in-flight responses aren't ignored.
  */
 export class RateLimitBucket {
   public limit: number = Infinity;
@@ -13,45 +17,41 @@ export class RateLimitBucket {
   public bucket?: string;
 
   private queue: QueuedRequest[] = [];
-  private processing: boolean = false;
-  private acquiring: boolean = false;
+  private processing = false;
+
+  // Promise-chain mutex — each acquire() chains on the previous so only
+  // one caller reads/writes remaining at a time. No spin loops needed.
+  private _mutex: Promise<void> = Promise.resolve();
 
   /**
-   * Wait for rate limit availability before proceeding
+   * Wait for rate limit availability before proceeding.
+   * Serialized via promise chain so concurrent callers never race on remaining.
    */
-  public async acquire(): Promise<void> {
-    // Wait if another acquire is in progress to prevent race conditions
-    while (this.acquiring) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
+  public acquire(): Promise<void> {
+    const ticket = this._mutex.then(() => this._acquireSlot());
+    // Swallow rejections on the chain so a failed acquire doesn't block future ones
+    this._mutex = ticket.catch(() => {});
+    return ticket;
+  }
+
+  private async _acquireSlot(): Promise<void> {
+    const now = Date.now();
+    const resetMs = this.reset * 1000;
+
+    if (now >= resetMs && this.reset > 0) {
+      this.remaining = this.limit;
     }
 
-    this.acquiring = true;
-
-    try {
-      const now = Date.now();
-      const resetTime = this.reset * 1000;
-
-      // Reset bucket if time has passed
-      if (now >= resetTime && this.reset > 0) {
-        this.remaining = this.limit;
-      }
-
-      if (this.remaining > 0) {
-        this.remaining--;
-        return;
-      }
-
-      // Out of requests, queue it
-      this.acquiring = false;
-      return new Promise<void>((resolve, reject) => {
-        this.queue.push({ resolve, reject });
-        this.processQueue();
-      });
-    } finally {
-      if (this.acquiring) {
-        this.acquiring = false;
-      }
+    if (this.remaining > 0) {
+      this.remaining--;
+      return;
     }
+
+    // Out of capacity — hand off to the queue processor
+    return new Promise<void>((resolve, reject) => {
+      this.queue.push({ resolve, reject });
+      this.processQueue();
+    });
   }
 
   /**
@@ -70,7 +70,9 @@ export class RateLimitBucket {
   }
 
   /**
-   * Process queued requests when rate limit resets
+   * Process queued requests when rate limit resets.
+   * Re-reads this.reset after each sleep so update() changes during
+   * the wait aren't lost — prevents over-releasing on stale state.
    */
   private async processQueue(): Promise<void> {
     if (this.processing) return;
@@ -78,14 +80,20 @@ export class RateLimitBucket {
 
     while (this.queue.length > 0) {
       const now = Date.now();
-      const resetTime = this.reset * 1000;
+      const resetMs = this.reset * 1000;
 
-      if (now < resetTime) {
-        const delay = resetTime - now;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+      if (now < resetMs) {
+        await new Promise((r) => setTimeout(r, resetMs - now));
       }
 
-      this.remaining = this.limit;
+      // Re-check after waking — update() may have shifted the window
+      const currentResetMs = this.reset * 1000;
+      if (Date.now() >= currentResetMs) {
+        this.remaining = this.limit;
+      } else {
+        // Window moved forward while we slept, loop to wait again
+        continue;
+      }
 
       while (this.queue.length > 0 && this.remaining > 0) {
         const request = this.queue.shift();

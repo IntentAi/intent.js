@@ -17,7 +17,7 @@ export class Message {
     this.id        = data.id;
     this.channelId = data.channel_id;
     this.content   = data.content;
-    this.author    = new User(data.author);
+    this.author    = new User(data.author, client);
     this.createdAt = new Date(data.created_at);
     this.editedAt  = data.edited_at ? new Date(data.edited_at) : null;
   }

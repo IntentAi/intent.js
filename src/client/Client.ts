@@ -89,8 +89,8 @@ export class Client extends EventEmitter {
   #wire(): void {
     this.#gateway.on('READY', (data: ReadyData) => {
       this.emit('ready', {
-        user: new User(data.user),
-        servers: data.servers.map((s) => new Server(s)),
+        user: new User(data.user, this),
+        servers: data.servers.map((s) => new Server(s, this)),
       } satisfies ReadyEvent);
     });
 
@@ -107,11 +107,11 @@ export class Client extends EventEmitter {
     });
 
     this.#gateway.on('SERVER_CREATE', (raw: RawServer) => {
-      this.emit('serverCreate', new Server(raw));
+      this.emit('serverCreate', new Server(raw, this));
     });
 
     this.#gateway.on('CHANNEL_CREATE', (raw: RawChannel) => {
-      this.emit('channelCreate', new Channel(raw));
+      this.emit('channelCreate', new Channel(raw, this));
     });
 
     this.#gateway.on('disconnect', (code: number) => {

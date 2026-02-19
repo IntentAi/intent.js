@@ -1,3 +1,4 @@
+import type { ClientRef } from '../client/ClientRef';
 import type { RawUser } from '../types';
 
 export class User {
@@ -7,7 +8,7 @@ export class User {
   readonly avatarUrl: string | null;
   readonly createdAt: Date;
 
-  constructor(data: RawUser) {
+  constructor(data: RawUser, _client: ClientRef) {
     this.id          = data.id;
     this.username    = data.username;
     this.displayName = data.display_name;
