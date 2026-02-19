@@ -18,7 +18,8 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'Tests coming soon'",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -34,9 +35,9 @@
     "url": "https://github.com/IntentAi/intent.js.git"
   },
   "dependencies": {
-    "ws": "^8.16.0",
     "@msgpack/msgpack": "^3.0.0-beta2",
-    "undici": "^6.6.0"
+    "undici": "^6.6.0",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -45,7 +46,8 @@
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.56.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=18.0.0"

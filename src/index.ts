@@ -4,16 +4,17 @@
  * A discord.js-compatible bot framework for the Intent platform.
  */
 
-// Core client exports
-// export { Client } from './client/Client';
+// Core client
+export { Client } from './client/Client';
+export type { ClientOptions, ReadyEvent, MessageDeletePayload } from './client/Client';
 
-// Structure exports
-// export { Message } from './structures/Message';
-// export { Server } from './structures/Server';
-// export { Channel } from './structures/Channel';
-// export { User } from './structures/User';
+// Structures
+export { Message } from './structures/Message';
+export { Server } from './structures/Server';
+export { Channel } from './structures/Channel';
+export { User } from './structures/User';
 
-// REST exports
+// REST
 export { REST } from './rest';
 export type { RequestMethod } from './rest';
 export {
@@ -26,11 +27,11 @@ export {
   ServerError,
 } from './rest';
 
-// Gateway exports
-// export { Gateway } from './gateway/Gateway';
+// Gateway state (useful for bots checking connection status)
+export { GatewayState } from './gateway';
 
-// Builder exports
-// export { EmbedBuilder } from './builders/EmbedBuilder';
+// Shared raw types
+export type { RawUser, RawServer, RawChannel, RawMessage } from './types';
 
 // Version
 export const version = '0.1.0';
