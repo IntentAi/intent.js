@@ -67,7 +67,7 @@ export class Gateway extends EventEmitter {
   // ---- socket ----
 
   private _open(): void {
-    const ws = new WebSocket(this.url);
+    const ws = new WebSocket(this.url, { maxPayload: 4 * 1024 * 1024 });
     this.ws = ws;
     ws.on('open',    ()           => this._onOpen());
     ws.on('message', (data, bin) => this._onMessage(data, bin));

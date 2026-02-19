@@ -24,6 +24,17 @@ export interface ReadyEvent {
   servers: Server[];
 }
 
+export interface ClientEvents {
+  ready: [event: ReadyEvent];
+  messageCreate: [msg: Message];
+  messageUpdate: [msg: Message];
+  messageDelete: [payload: MessageDeletePayload];
+  serverCreate: [server: Server];
+  channelCreate: [channel: Channel];
+  disconnect: [code: number];
+  error: [err: Error];
+}
+
 /**
  * The main entry point for bot code.
  *
@@ -72,34 +83,46 @@ export class Client extends EventEmitter {
 
   // ---- typed event overloads ----
 
-  on(event: 'ready',         listener: (event: ReadyEvent) => void): this;
-  on(event: 'messageCreate', listener: (msg: Message) => void): this;
-  on(event: 'messageUpdate', listener: (msg: Message) => void): this;
-  on(event: 'messageDelete', listener: (payload: MessageDeletePayload) => void): this;
-  on(event: 'serverCreate',  listener: (server: Server) => void): this;
-  on(event: 'channelCreate', listener: (channel: Channel) => void): this;
-  on(event: 'disconnect',    listener: (code: number) => void): this;
-  on(event: 'error',         listener: (err: Error) => void): this;
-  on(event: string,          listener: (...args: any[]) => void): this {
+  on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+  on(event: string, listener: (...args: unknown[]) => void): this;
+  on(event: string, listener: (...args: unknown[]) => void): this {
     return super.on(event, listener);
+  }
+
+  emit<K extends keyof ClientEvents>(event: K, ...args: ClientEvents[K]): boolean;
+  emit(event: string, ...args: unknown[]): boolean;
+  emit(event: string, ...args: unknown[]): boolean {
+    return super.emit(event, ...args);
   }
 
   // ---- gateway event wiring ----
 
   #wire(): void {
     this.#gateway.on('READY', (data: ReadyData) => {
-      this.emit('ready', {
-        user: new User(data.user, this),
-        servers: data.servers.map((s) => new Server(s, this)),
-      } satisfies ReadyEvent);
+      try {
+        this.emit('ready', {
+          user: new User(data.user, this),
+          servers: data.servers.map((s) => new Server(s, this)),
+        } satisfies ReadyEvent);
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('MESSAGE_CREATE', (raw: RawMessage) => {
-      this.emit('messageCreate', new Message(raw, this));
+      try {
+        this.emit('messageCreate', new Message(raw, this));
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('MESSAGE_UPDATE', (raw: RawMessage) => {
-      this.emit('messageUpdate', new Message(raw, this));
+      try {
+        this.emit('messageUpdate', new Message(raw, this));
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('MESSAGE_DELETE', (raw: { id: string; channel_id: string }) => {
@@ -107,11 +130,19 @@ export class Client extends EventEmitter {
     });
 
     this.#gateway.on('SERVER_CREATE', (raw: RawServer) => {
-      this.emit('serverCreate', new Server(raw, this));
+      try {
+        this.emit('serverCreate', new Server(raw, this));
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('CHANNEL_CREATE', (raw: RawChannel) => {
-      this.emit('channelCreate', new Channel(raw, this));
+      try {
+        this.emit('channelCreate', new Channel(raw, this));
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('disconnect', (code: number) => {

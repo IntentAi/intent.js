@@ -91,7 +91,9 @@ export class RateLimitBucket {
       if (Date.now() >= currentResetMs) {
         this.remaining = this.limit;
       } else {
-        // Window moved forward while we slept, loop to wait again
+        // Window moved forward while we slept — back off briefly to avoid a tight loop
+        // if the server keeps sending inconsistent reset headers
+        await new Promise((r) => setTimeout(r, 100));
         continue;
       }
 
