@@ -8,6 +8,11 @@ import {
   NotFoundError,
   ServerError,
 } from './errors';
+import type {
+  RawServer as ServerData,
+  RawChannel as ChannelData,
+  RawMessage as MessageData,
+} from '../types';
 
 interface RESTOptions {
   baseURL?: string;
@@ -29,45 +34,6 @@ interface ErrorResponse {
   global?: boolean;
 }
 
-interface ServerData {
-  id: string;
-  name: string;
-  owner_id: string;
-  icon_url?: string | null;
-  description?: string | null;
-  member_count: number;
-  created_at: string;
-}
-
-interface ChannelData {
-  id: string;
-  server_id: string;
-  name: string;
-  type: number;
-  topic?: string | null;
-  position: number;
-  parent_id?: string | null;
-  created_at: string;
-}
-
-interface UserData {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url?: string | null;
-  created_at: string;
-}
-
-interface MessageData {
-  id: string;
-  channel_id: string;
-  author: UserData;
-  content: string;
-  created_at: string;
-  edited_at?: string | null;
-  attachments?: unknown[];
-  embeds?: unknown[];
-}
 
 /**
  * REST API client with rate limiting and auto-retry

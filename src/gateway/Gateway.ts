@@ -51,8 +51,10 @@ export class Gateway extends EventEmitter {
 
   connect(): void {
     if (this._state === GatewayState.CONNECTED || this._state === GatewayState.CONNECTING) return;
+    // Only clear intentionalClose on fresh connects — reconnect timer calls this from RECONNECTING
+    // state and must not override a disconnect() that fired while the timer was pending.
+    if (this._state === GatewayState.DISCONNECTED) this.intentionalClose = false;
     this._state = GatewayState.CONNECTING;
-    this.intentionalClose = false;
     this._open();
   }
 
@@ -85,7 +87,12 @@ export class Gateway extends EventEmitter {
   }
 
   private _onMessage(data: RawData, isBinary: boolean): void {
-    if (!isBinary) return;
+    if (!isBinary) {
+      // Intent gateway only sends binary MessagePack frames. A text frame here
+      // likely means a misconfigured server or a leaked HTTP error — surface it.
+      console.warn('[intent.js] Received unexpected text frame from gateway:', data.toString());
+      return;
+    }
     try {
       const payload = decode(this._toBuffer(data));
       if (payload.s != null) this.seq = payload.s;
@@ -139,7 +146,11 @@ export class Gateway extends EventEmitter {
   private _startHeartbeat(): void {
     if (!this.heartbeatMs) return;
     this._stopHeartbeat();
-    this._beat(); // send immediately on connect per spec
+    // Intent protocol: client starts heartbeat immediately after Ready.
+    // Each interval tick that passes with awaitingAck=true counts as a missed beat.
+    // After MAX_MISSED_HB consecutive misses the connection is considered dead.
+    // See intent-protocol/gateway/opcodes.md — Connection Lifecycle.
+    this._beat();
     this.heartbeatTimer = setInterval(() => {
       if (this.awaitingAck && ++this.missed >= MAX_MISSED_HB) {
         this.ws?.close(1001, 'Heartbeat timeout');

@@ -17,6 +17,8 @@ export const Opcodes = {
 
 export type Opcode = (typeof Opcodes)[keyof typeof Opcodes];
 
+import type { RawUser, RawServer } from '../types';
+
 /** Base wire format shared by all gateway messages */
 export interface GatewayPayload<D = unknown> {
   op: number;
@@ -37,19 +39,7 @@ export interface IdentifyData {
 
 /** Data carried in Ready (op 3) */
 export interface ReadyData {
-  user: {
-    id: string;
-    username: string;
-    display_name: string;
-    avatar_url: string | null;
-    created_at: string;
-  };
-  servers: Array<{
-    id: string;
-    name: string;
-    icon_url: string | null;
-    owner_id: string;
-    member_count: number;
-  }>;
+  user: RawUser;
+  servers: RawServer[];
   heartbeat_interval: number;
 }
