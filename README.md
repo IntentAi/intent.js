@@ -2,7 +2,7 @@
 
 TypeScript bot SDK for [Intent](https://github.com/IntentAi/intent). Familiar API if you know discord.js.
 
-> Early development — REST client implemented, gateway and structures in progress.
+> Phase 1 development — gateway, REST client, structures, and rate limiting implemented. Event system wired up and tested.
 
 ## Example
 
