@@ -13,6 +13,9 @@ export { Message } from './structures/Message';
 export { Server } from './structures/Server';
 export { Channel } from './structures/Channel';
 export { User } from './structures/User';
+export { Role } from './structures/Role';
+export { Member } from './structures/Member';
+export { Collection } from './structures/Collection';
 
 // REST
 export { REST } from './rest';
@@ -31,7 +34,7 @@ export {
 export { GatewayState } from './gateway';
 
 // Shared raw types
-export type { RawUser, RawServer, RawChannel, RawMessage } from './types';
+export type { RawUser, RawServer, RawChannel, RawMessage, RawRole, RawMember } from './types';
 
 // Version
 export const version = '0.1.0';

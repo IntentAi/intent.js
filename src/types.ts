@@ -39,3 +39,23 @@ export interface RawMessage {
   attachments?: unknown[];
   embeds?: unknown[];
 }
+
+export interface RawRole {
+  id: string;
+  server_id: string;
+  name: string;
+  permissions: number;
+  position: number;
+  color: number;
+  hoist: boolean;
+  mentionable: boolean;
+  created_at: string;
+}
+
+export interface RawMember {
+  user: RawUser;
+  server_id: string;
+  nickname: string | null;
+  roles: string[];
+  joined_at: string;
+}

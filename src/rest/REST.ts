@@ -290,6 +290,11 @@ export class REST {
     return this.request<void>('DELETE', `/servers/${serverId}`);
   }
 
+  public async leaveServer(serverId: string): Promise<void> {
+    this.validateSnowflake(serverId, 'serverId');
+    return this.request<void>('DELETE', `/servers/${serverId}/members/@me`);
+  }
+
   // Channels
   public async getChannel(channelId: string): Promise<ChannelData> {
     this.validateSnowflake(channelId, 'channelId');
