@@ -5,6 +5,7 @@ import { Message } from '../structures/Message';
 import { Server } from '../structures/Server';
 import { Channel } from '../structures/Channel';
 import { User } from '../structures/User';
+import { Collection } from '../structures/Collection';
 import type { ReadyData } from '../gateway/types';
 import type { RawMessage, RawServer, RawChannel } from '../types';
 
@@ -56,6 +57,21 @@ export class Client extends EventEmitter {
   readonly #rest: REST;
   readonly #gateway: Gateway;
 
+  /** The bot's own user — null until the Ready event fires */
+  user: User | null = null;
+
+  /** All servers the bot is in, keyed by server ID */
+  readonly servers: Collection<string, Server> = new Collection();
+
+  /** All channels the bot can see, keyed by channel ID */
+  readonly channels: Collection<string, Channel> = new Collection();
+
+  /**
+   * Known users the client has observed — populated from Ready and message authors.
+   * Not exhaustive; only users that have appeared in events are cached.
+   */
+  readonly users: Collection<string, User> = new Collection();
+
   constructor(options: ClientOptions) {
     super();
     this.#rest = new REST({ token: options.token, baseURL: options.restUrl });
@@ -106,10 +122,13 @@ export class Client extends EventEmitter {
   #wire(): void {
     this.#gateway.on('READY', (data: ReadyData) => {
       try {
-        this.emit('ready', {
-          user: new User(data.user, this),
-          servers: data.servers.map((s) => new Server(s, this)),
-        } satisfies ReadyEvent);
+        this.user = new User(data.user, this);
+        this.users.set(this.user.id, this.user);
+
+        const servers = data.servers.map((s) => new Server(s, this));
+        for (const server of servers) this.servers.set(server.id, server);
+
+        this.emit('ready', { user: this.user, servers } satisfies ReadyEvent);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
       }
@@ -117,7 +136,11 @@ export class Client extends EventEmitter {
 
     this.#gateway.on('MESSAGE_CREATE', (raw: RawMessage) => {
       try {
-        this.emit('messageCreate', new Message(raw, this));
+        const msg = new Message(raw, this);
+        // opportunistically cache the author — users collection isn't exhaustive,
+        // but message events are a cheap way to keep it reasonably warm
+        this.users.set(msg.author.id, msg.author);
+        this.emit('messageCreate', msg);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
       }
@@ -125,7 +148,9 @@ export class Client extends EventEmitter {
 
     this.#gateway.on('MESSAGE_UPDATE', (raw: RawMessage) => {
       try {
-        this.emit('messageUpdate', new Message(raw, this));
+        const msg = new Message(raw, this);
+        this.users.set(msg.author.id, msg.author);
+        this.emit('messageUpdate', msg);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
       }
@@ -137,7 +162,9 @@ export class Client extends EventEmitter {
 
     this.#gateway.on('SERVER_CREATE', (raw: RawServer) => {
       try {
-        this.emit('serverCreate', new Server(raw, this));
+        const server = new Server(raw, this);
+        this.servers.set(server.id, server);
+        this.emit('serverCreate', server);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
       }
@@ -145,7 +172,9 @@ export class Client extends EventEmitter {
 
     this.#gateway.on('CHANNEL_CREATE', (raw: RawChannel) => {
       try {
-        this.emit('channelCreate', new Channel(raw, this));
+        const channel = new Channel(raw, this);
+        this.channels.set(channel.id, channel);
+        this.emit('channelCreate', channel);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
       }
