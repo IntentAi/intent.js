@@ -102,6 +102,50 @@ describe('REST', () => {
       const rest = new REST({ token: 'test' });
       await expect(rest.getServer('')).rejects.toThrow('Invalid serverId');
     });
+
+    it('rejects IDs with letters mixed in', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.getServer('123abc')).rejects.toThrow('Invalid serverId');
+    });
+
+    it('rejects IDs with special characters', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.getServer('12-34')).rejects.toThrow('Invalid serverId');
+    });
+
+    it('validates channelId on getChannel', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.getChannel('not-an-id')).rejects.toThrow('Invalid channelId');
+    });
+
+    it('validates channelId on createMessage', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.createMessage('bad', { content: 'hi' })).rejects.toThrow('Invalid channelId');
+    });
+
+    it('validates both channelId and messageId on getMessage', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.getMessage('bad', '100')).rejects.toThrow('Invalid channelId');
+      await expect(rest.getMessage('100', 'bad')).rejects.toThrow('Invalid messageId');
+    });
+
+    it('validates before/after cursors on listMessages', async () => {
+      const rest = new REST({ token: 'test' });
+      await expect(rest.listMessages('100', { before: 'not-a-snowflake' })).rejects.toThrow('Invalid before');
+      await expect(rest.listMessages('100', { after: 'not-a-snowflake' })).rejects.toThrow('Invalid after');
+    });
+
+    it('accepts valid numeric snowflakes without throwing', async () => {
+      // Snowflake validation should not throw for all-digit IDs.
+      // Stub fetch so the call doesn't actually go out.
+      const fetchMock = vi.fn().mockResolvedValue(mockOk(rawServer));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const rest = new REST({ token: 'test' });
+      await expect(rest.getServer('123456789012345678')).resolves.toBeDefined();
+
+      vi.unstubAllGlobals();
+    });
   });
 
   // ---- request basics ----
