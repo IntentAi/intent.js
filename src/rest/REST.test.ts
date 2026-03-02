@@ -69,25 +69,33 @@ const rawMessage: RawMessage = {
 
 describe('REST', () => {
   describe('token guard', () => {
+    // Stub fetch with an immediate network error so these tests don't make real
+    // HTTP calls — a missing token should throw IntentError before fetch is even
+    // called, and a present token should surface a TypeError (network), not IntentError.
+    beforeEach(() => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it('throws IntentError when no token is set', async () => {
       const rest = new REST();
       await expect(rest.request('GET', '/test')).rejects.toThrow(IntentError);
       await expect(rest.request('GET', '/test')).rejects.toThrow('No auth token set');
     });
 
-    it('does not throw when token is provided in constructor', async () => {
+    it('does not throw IntentError when token is in constructor', async () => {
       const rest = new REST({ token: 'test_token' });
-      // will fail with a network error, but shouldn't throw IntentError
-      const result = rest.request('GET', '/test').catch((e) => e);
-      const err = await result;
+      const err = await rest.request('GET', '/test').catch((e) => e);
       expect(err).not.toBeInstanceOf(IntentError);
     });
 
-    it('does not throw after setToken()', async () => {
+    it('does not throw IntentError after setToken()', async () => {
       const rest = new REST();
       rest.setToken('test_token');
-      const result = rest.request('GET', '/test').catch((e) => e);
-      const err = await result;
+      const err = await rest.request('GET', '/test').catch((e) => e);
       expect(err).not.toBeInstanceOf(IntentError);
     });
   });
