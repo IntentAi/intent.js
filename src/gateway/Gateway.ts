@@ -11,6 +11,8 @@ const RECONNECT_MAX_MS  = 30_000;
 export interface GatewayOptions {
   token: string;
   url?: string;
+  /** Bitwise OR of GatewayIntentBits values — forwarded verbatim in Identify */
+  intents?: number;
 }
 
 /**
@@ -23,6 +25,7 @@ export interface GatewayOptions {
 export class Gateway extends EventEmitter {
   private readonly token: string;
   private readonly url: string;
+  private readonly intents: number;
 
   private ws: WebSocket | null = null;
   private _state: GatewayState = GatewayState.DISCONNECTED;
@@ -43,8 +46,10 @@ export class Gateway extends EventEmitter {
 
   constructor(options: GatewayOptions) {
     super();
-    this.token = options.token;
-    this.url   = options.url ?? 'wss://gateway.intent.chat';
+    this.token   = options.token;
+    this.url     = options.url ?? 'wss://gateway.intent.chat';
+    // default to all known intents — server ignores bits it doesn't recognize
+    this.intents = options.intents ?? 0b1111111;
   }
 
   get state(): GatewayState { return this._state; }
@@ -79,7 +84,8 @@ export class Gateway extends EventEmitter {
     const identify: GatewayPayload<IdentifyData> = {
       op: Opcodes.IDENTIFY,
       d: {
-        token: this.token,
+        token:      this.token,
+        intents:    this.intents,
         properties: { os: process.platform, browser: 'intent.js', device: 'bot' },
       },
     };

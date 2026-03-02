@@ -30,8 +30,8 @@ export {
   ServerError,
 } from './rest';
 
-// Gateway state (useful for bots checking connection status)
-export { GatewayState } from './gateway';
+// Gateway
+export { GatewayState, GatewayIntentBits } from './gateway';
 
 // Shared raw types
 export type { RawUser, RawServer, RawChannel, RawMessage, RawRole, RawMember } from './types';

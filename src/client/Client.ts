@@ -10,6 +10,11 @@ import type { RawMessage, RawServer, RawChannel } from '../types';
 
 export interface ClientOptions {
   token: string;
+  /**
+   * Bitwise OR of GatewayIntentBits values.
+   * Defaults to all intents — narrow this down once the server enforces per-intent filtering.
+   */
+  intents?: number;
   /** Gateway WebSocket URL — defaults to wss://gateway.intent.chat */
   gatewayUrl?: string;
   /** REST base URL — defaults to https://api.intent.chat/v1 */
@@ -56,7 +61,8 @@ export class Client extends EventEmitter {
     this.#rest = new REST({ token: options.token, baseURL: options.restUrl });
 
     const gwOptions: GatewayOptions = { token: options.token };
-    if (options.gatewayUrl) gwOptions.url = options.gatewayUrl;
+    if (options.gatewayUrl) gwOptions.url     = options.gatewayUrl;
+    if (options.intents != null) gwOptions.intents = options.intents;
     this.#gateway = new Gateway(gwOptions);
 
     this.#wire();
