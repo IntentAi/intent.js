@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { REST } from './REST';
-import { IntentError } from './errors';
+import {
+  IntentError,
+  HTTPError,
+  RateLimitError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ServerError,
+} from './errors';
 import type { RawServer, RawMessage } from '../types';
 
 // ---- fetch mock helpers ----
@@ -175,6 +183,106 @@ describe('REST', () => {
       const rest = new REST({ token: 'tok' });
       const result = await rest.deleteServer('100');
       expect(result).toBeUndefined();
+    });
+  });
+
+  // ---- error status mapping ----
+  // Each test mocks a specific HTTP status and verifies the right error class
+  // comes back with the correct fields populated.
+
+  describe('error status mapping', () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+      vi.stubGlobal('fetch', fetchMock);
+      fetchMock.mockReset();
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('401 throws UnauthorizedError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(401, { error: 'invalid token' }));
+
+      const rest = new REST({ token: 'tok' });
+      await expect(rest.listServers()).rejects.toBeInstanceOf(UnauthorizedError);
+    });
+
+    it('403 throws ForbiddenError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(403, { error: 'no permission' }));
+
+      const rest = new REST({ token: 'tok' });
+      await expect(rest.listServers()).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it('404 throws NotFoundError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(404, { error: 'not found' }));
+
+      const rest = new REST({ token: 'tok' });
+      await expect(rest.getServer('100')).rejects.toBeInstanceOf(NotFoundError);
+    });
+
+    it('429 throws RateLimitError with retryAfter and global populated', async () => {
+      fetchMock.mockResolvedValueOnce(
+        mockErr(429, { error: 'rate limited', retry_after: 3, global: true })
+      );
+
+      // maxRetries: 0 so the 429 throws on the first attempt instead of sleeping and retrying
+      const rest = new REST({ token: 'tok', maxRetries: 0 });
+      const err = await rest.listServers().catch((e) => e) as RateLimitError;
+      expect(err).toBeInstanceOf(RateLimitError);
+      expect(err.retryAfter).toBe(3);
+      expect(err.global).toBe(true);
+    });
+
+    it('429 with bucket header populates err.bucket', async () => {
+      const headers: Record<string, string> = {
+        'content-type': 'application/json',
+        'x-ratelimit-bucket': 'my-bucket',
+      };
+      const response = mockErr(429, { error: 'rate limited', retry_after: 1, global: false });
+      (response.headers as unknown as { get: (k: string) => string | null }).get =
+        (k: string) => headers[k.toLowerCase()] ?? null;
+      fetchMock.mockResolvedValueOnce(response);
+
+      const rest = new REST({ token: 'tok', maxRetries: 0 });
+      const err = await rest.listServers().catch((e) => e) as RateLimitError;
+      expect(err.bucket).toBe('my-bucket');
+    });
+
+    it('500 throws ServerError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(500, { error: 'internal server error' }));
+
+      // maxRetries: 0 prevents the exponential backoff retry loop
+      const rest = new REST({ token: 'tok', maxRetries: 0 });
+      await expect(rest.listServers()).rejects.toBeInstanceOf(ServerError);
+    });
+
+    it('502 throws ServerError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(502, { error: 'bad gateway' }));
+
+      const rest = new REST({ token: 'tok', maxRetries: 0 });
+      await expect(rest.listServers()).rejects.toBeInstanceOf(ServerError);
+    });
+
+    it('unknown 4xx throws HTTPError', async () => {
+      fetchMock.mockResolvedValueOnce(mockErr(422, { error: 'unprocessable' }));
+
+      const rest = new REST({ token: 'tok' });
+      const err = await rest.listServers().catch((e) => e);
+      expect(err).toBeInstanceOf(HTTPError);
+      expect((err as HTTPError).status).toBe(422);
+    });
+
+    it('all HTTP errors extend IntentError', async () => {
+      for (const status of [401, 403, 404, 500]) {
+        fetchMock.mockResolvedValueOnce(mockErr(status, { error: 'err' }));
+        // maxRetries: 0 so 5xx doesn't retry and exhaust the mock queue
+        const rest = new REST({ token: 'tok', maxRetries: 0 });
+        const err = await rest.listServers().catch((e) => e);
+        expect(err).toBeInstanceOf(IntentError);
+      }
     });
   });
 });
