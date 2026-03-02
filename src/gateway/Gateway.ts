@@ -1,8 +1,12 @@
 import { EventEmitter } from 'events';
 import WebSocket, { type RawData } from 'ws';
 import { encode, decode } from './encoding';
-import { GatewayState, Opcodes } from './types';
+import { GatewayState, Opcodes, GatewayIntentBits } from './types';
 import type { GatewayPayload, IdentifyData, ReadyData } from './types';
+
+// OR of every defined intent bit — used as the default when no intents are specified.
+// Derived here so adding a flag to GatewayIntentBits automatically expands the default.
+const ALL_INTENTS = Object.values(GatewayIntentBits).reduce((a, b) => a | b, 0);
 
 const MAX_MISSED_HB     = 3;
 const RECONNECT_BASE_MS = 1_000;
@@ -49,7 +53,7 @@ export class Gateway extends EventEmitter {
     this.token   = options.token;
     this.url     = options.url ?? 'wss://gateway.intent.chat';
     // default to all known intents — server ignores bits it doesn't recognize
-    this.intents = options.intents ?? 0b1111111;
+    this.intents = options.intents ?? ALL_INTENTS;
   }
 
   get state(): GatewayState { return this._state; }

@@ -1,3 +1,5 @@
+import type { RawUser, RawServer } from '../types';
+
 /** Connection state machine values */
 export enum GatewayState {
   DISCONNECTED = 'DISCONNECTED',
@@ -34,8 +36,6 @@ export const Opcodes = {
 } as const;
 
 export type Opcode = (typeof Opcodes)[keyof typeof Opcodes];
-
-import type { RawUser, RawServer } from '../types';
 
 /** Base wire format shared by all gateway messages */
 export interface GatewayPayload<D = unknown> {

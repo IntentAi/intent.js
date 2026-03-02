@@ -78,6 +78,8 @@ export class Client extends EventEmitter {
 
     const gwOptions: GatewayOptions = { token: options.token };
     if (options.gatewayUrl) gwOptions.url     = options.gatewayUrl;
+    // != null so intents: 0 (no events) is passed through — a falsy check would
+    // silently fall back to ALL_INTENTS and subscribe the bot to everything
     if (options.intents != null) gwOptions.intents = options.intents;
     this.#gateway = new Gateway(gwOptions);
 
@@ -140,6 +142,10 @@ export class Client extends EventEmitter {
         const servers = data.servers.map((s) => new Server(s, this));
         for (const server of servers) this.servers.set(server.id, server);
 
+        // channels aren't seeded from Ready — the protocol doesn't carry a channel
+        // list in the Ready payload yet (not in RawServer, not top-level).
+        // They fill in via CHANNEL_CREATE events and REST fetches. See #10.
+
         this.emit('ready', { user: this.user, servers } satisfies ReadyEvent);
       } catch (err) {
         this.emit('error', err instanceof Error ? err : new Error(String(err)));
@@ -169,7 +175,11 @@ export class Client extends EventEmitter {
     });
 
     this.#gateway.on('MESSAGE_DELETE', (raw: { id: string; channel_id: string }) => {
-      this.emit('messageDelete', { id: raw.id, channelId: raw.channel_id });
+      try {
+        this.emit('messageDelete', { id: raw.id, channelId: raw.channel_id });
+      } catch (err) {
+        this.emit('error', err instanceof Error ? err : new Error(String(err)));
+      }
     });
 
     this.#gateway.on('SERVER_CREATE', (raw: RawServer) => {
