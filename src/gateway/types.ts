@@ -1,3 +1,5 @@
+import type { RawUser, RawServer } from '../types';
+
 /** Connection state machine values */
 export enum GatewayState {
   DISCONNECTED = 'DISCONNECTED',
@@ -5,6 +7,24 @@ export enum GatewayState {
   CONNECTED    = 'CONNECTED',
   RECONNECTING = 'RECONNECTING',
 }
+
+/**
+ * Bitfield flags for gateway intents — OR them together in ClientOptions.intents.
+ * Phase 1 always sends all intents; per-intent filtering is a future server concern.
+ *
+ * @example
+ * import { GatewayIntentBits } from 'intent.js'
+ * const client = new Client({ token, intents: GatewayIntentBits.SERVERS | GatewayIntentBits.SERVER_MESSAGES })
+ */
+export const GatewayIntentBits = {
+  SERVERS:         1 << 0,
+  CHANNELS:        1 << 1,
+  SERVER_MESSAGES: 1 << 2,
+  DIRECT_MESSAGES: 1 << 3,
+  MEMBERS:         1 << 4,
+  PRESENCE:        1 << 5,
+  VOICE:           1 << 6,
+} as const;
 
 /** Phase 1 implemented opcodes */
 export const Opcodes = {
@@ -17,8 +37,6 @@ export const Opcodes = {
 
 export type Opcode = (typeof Opcodes)[keyof typeof Opcodes];
 
-import type { RawUser, RawServer } from '../types';
-
 /** Base wire format shared by all gateway messages */
 export interface GatewayPayload<D = unknown> {
   op: number;
@@ -30,6 +48,7 @@ export interface GatewayPayload<D = unknown> {
 /** Data carried in Identify (op 2) */
 export interface IdentifyData {
   token: string;
+  intents: number;
   properties?: {
     os: string;
     browser: string;

@@ -1,8 +1,12 @@
 import { EventEmitter } from 'events';
 import WebSocket, { type RawData } from 'ws';
 import { encode, decode } from './encoding';
-import { GatewayState, Opcodes } from './types';
+import { GatewayState, Opcodes, GatewayIntentBits } from './types';
 import type { GatewayPayload, IdentifyData, ReadyData } from './types';
+
+// OR of every defined intent bit — used as the default when no intents are specified.
+// Derived here so adding a flag to GatewayIntentBits automatically expands the default.
+const ALL_INTENTS = Object.values(GatewayIntentBits).reduce((a, b) => a | b, 0);
 
 const MAX_MISSED_HB     = 3;
 const RECONNECT_BASE_MS = 1_000;
@@ -11,6 +15,8 @@ const RECONNECT_MAX_MS  = 30_000;
 export interface GatewayOptions {
   token: string;
   url?: string;
+  /** Bitwise OR of GatewayIntentBits values — forwarded verbatim in Identify */
+  intents?: number;
 }
 
 /**
@@ -23,6 +29,7 @@ export interface GatewayOptions {
 export class Gateway extends EventEmitter {
   private readonly token: string;
   private readonly url: string;
+  private readonly intents: number;
 
   private ws: WebSocket | null = null;
   private _state: GatewayState = GatewayState.DISCONNECTED;
@@ -43,8 +50,10 @@ export class Gateway extends EventEmitter {
 
   constructor(options: GatewayOptions) {
     super();
-    this.token = options.token;
-    this.url   = options.url ?? 'wss://gateway.intent.chat';
+    this.token   = options.token;
+    this.url     = options.url ?? 'wss://gateway.intent.chat';
+    // default to all known intents — server ignores bits it doesn't recognize
+    this.intents = options.intents ?? ALL_INTENTS;
   }
 
   get state(): GatewayState { return this._state; }
@@ -79,7 +88,8 @@ export class Gateway extends EventEmitter {
     const identify: GatewayPayload<IdentifyData> = {
       op: Opcodes.IDENTIFY,
       d: {
-        token: this.token,
+        token:      this.token,
+        intents:    this.intents,
         properties: { os: process.platform, browser: 'intent.js', device: 'bot' },
       },
     };

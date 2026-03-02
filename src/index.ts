@@ -6,7 +6,7 @@
 
 // Core client
 export { Client } from './client/Client';
-export type { ClientOptions, ReadyEvent, MessageDeletePayload } from './client/Client';
+export type { ClientOptions, ClientEvents, ReadyEvent, MessageDeletePayload } from './client/Client';
 
 // Structures
 export { Message } from './structures/Message';
@@ -30,8 +30,8 @@ export {
   ServerError,
 } from './rest';
 
-// Gateway state (useful for bots checking connection status)
-export { GatewayState } from './gateway';
+// Gateway
+export { GatewayState, GatewayIntentBits } from './gateway';
 
 // Shared raw types
 export type { RawUser, RawServer, RawChannel, RawMessage, RawRole, RawMember } from './types';
