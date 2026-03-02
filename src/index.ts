@@ -6,13 +6,16 @@
 
 // Core client
 export { Client } from './client/Client';
-export type { ClientOptions, ReadyEvent, MessageDeletePayload } from './client/Client';
+export type { ClientOptions, ClientEvents, ReadyEvent, MessageDeletePayload } from './client/Client';
 
 // Structures
 export { Message } from './structures/Message';
 export { Server } from './structures/Server';
 export { Channel } from './structures/Channel';
 export { User } from './structures/User';
+export { Role } from './structures/Role';
+export { Member } from './structures/Member';
+export { Collection } from './structures/Collection';
 
 // REST
 export { REST } from './rest';
@@ -27,11 +30,11 @@ export {
   ServerError,
 } from './rest';
 
-// Gateway state (useful for bots checking connection status)
-export { GatewayState } from './gateway';
+// Gateway
+export { GatewayState, GatewayIntentBits } from './gateway';
 
 // Shared raw types
-export type { RawUser, RawServer, RawChannel, RawMessage } from './types';
+export type { RawUser, RawServer, RawChannel, RawMessage, RawRole, RawMember } from './types';
 
 // Version
 export const version = '0.1.0';

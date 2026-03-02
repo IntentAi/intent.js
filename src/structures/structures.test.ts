@@ -3,8 +3,11 @@ import { Channel } from './Channel';
 import { Server } from './Server';
 import { User } from './User';
 import { Message } from './Message';
+import { Role } from './Role';
+import { Member } from './Member';
+import { Collection } from './Collection';
 import type { ClientRef } from '../client/ClientRef';
-import type { RawChannel, RawServer, RawUser, RawMessage } from '../types';
+import type { RawChannel, RawServer, RawUser, RawMessage, RawRole, RawMember } from '../types';
 import { REST } from '../rest';
 
 function makeClientRef(): ClientRef {
@@ -47,6 +50,26 @@ const rawMessage: RawMessage = {
   content: 'hello world',
   created_at: '2025-01-01T00:00:00Z',
   edited_at: null,
+};
+
+const rawRole: RawRole = {
+  id: '400',
+  server_id: '1',
+  name: 'Admin',
+  permissions: 8,
+  position: 1,
+  color: 0xff0000,
+  hoist: true,
+  mentionable: false,
+  created_at: '2025-01-01T00:00:00Z',
+};
+
+const rawMember: RawMember = {
+  user: rawUser,
+  server_id: '1',
+  nickname: 'TestNick',
+  roles: ['400'],
+  joined_at: '2025-06-01T00:00:00Z',
 };
 
 describe('structures', () => {
@@ -93,6 +116,92 @@ describe('structures', () => {
       expect(msg.author).toBeInstanceOf(User);
       expect(msg.author.username).toBe('testbot');
       expect(msg.editedAt).toBeNull();
+    });
+  });
+
+  describe('Role', () => {
+    it('maps raw wire data to camelCase properties', () => {
+      const role = new Role(rawRole, client);
+      expect(role.id).toBe('400');
+      expect(role.serverId).toBe('1');
+      expect(role.name).toBe('Admin');
+      expect(role.permissions).toBe(8);
+      expect(role.position).toBe(1);
+      expect(role.color).toBe(0xff0000);
+      expect(role.hoist).toBe(true);
+      expect(role.mentionable).toBe(false);
+      expect(role.createdAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('Member', () => {
+    it('wraps user as User and exposes member fields', () => {
+      const member = new Member(rawMember, client);
+      expect(member.user).toBeInstanceOf(User);
+      expect(member.user.username).toBe('testbot');
+      expect(member.serverId).toBe('1');
+      expect(member.nickname).toBe('TestNick');
+      expect(member.roles).toEqual(['400']);
+      expect(member.joinedAt).toBeInstanceOf(Date);
+    });
+
+    it('displayName returns nickname when set', () => {
+      const member = new Member(rawMember, client);
+      expect(member.displayName).toBe('TestNick');
+    });
+
+    it('displayName falls back to username when no nickname', () => {
+      const member = new Member({ ...rawMember, nickname: null }, client);
+      expect(member.displayName).toBe('testbot');
+    });
+  });
+
+  describe('Collection', () => {
+    function makeCollection(): Collection<string, number> {
+      const c = new Collection<string, number>();
+      c.set('a', 1);
+      c.set('b', 2);
+      c.set('c', 3);
+      return c;
+    }
+
+    it('extends Map', () => {
+      expect(makeCollection()).toBeInstanceOf(Map);
+    });
+
+    it('filter returns matching entries', () => {
+      const result = makeCollection().filter((v) => v > 1);
+      expect(result.size).toBe(2);
+      expect(result.get('b')).toBe(2);
+    });
+
+    it('find returns first matching value', () => {
+      expect(makeCollection().find((v) => v === 2)).toBe(2);
+      expect(makeCollection().find((v) => v === 99)).toBeUndefined();
+    });
+
+    it('map transforms values', () => {
+      expect(makeCollection().map((v) => v * 2)).toEqual([2, 4, 6]);
+    });
+
+    it('first and last work correctly', () => {
+      const c = makeCollection();
+      expect(c.first()).toBe(1);
+      expect(c.last()).toBe(3);
+    });
+
+    it('first/last return undefined on empty collection', () => {
+      const empty = new Collection<string, number>();
+      expect(empty.first()).toBeUndefined();
+      expect(empty.last()).toBeUndefined();
+    });
+
+    it('random returns undefined for empty collection', () => {
+      expect(new Collection<string, number>().random()).toBeUndefined();
+    });
+
+    it('toJSON returns all values as array', () => {
+      expect(makeCollection().toJSON()).toEqual([1, 2, 3]);
     });
   });
 });
