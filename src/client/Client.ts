@@ -111,6 +111,18 @@ export class Client extends EventEmitter {
     return super.on(event, listener);
   }
 
+  once<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+  once(event: string, listener: (...args: unknown[]) => void): this;
+  once(event: string, listener: (...args: unknown[]) => void): this {
+    return super.once(event, listener);
+  }
+
+  off<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+  off(event: string, listener: (...args: unknown[]) => void): this;
+  off(event: string, listener: (...args: unknown[]) => void): this {
+    return super.off(event, listener);
+  }
+
   emit<K extends keyof ClientEvents>(event: K, ...args: ClientEvents[K]): boolean;
   emit(event: string, ...args: unknown[]): boolean;
   emit(event: string, ...args: unknown[]): boolean {

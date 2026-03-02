@@ -6,7 +6,7 @@
 
 // Core client
 export { Client } from './client/Client';
-export type { ClientOptions, ReadyEvent, MessageDeletePayload } from './client/Client';
+export type { ClientOptions, ClientEvents, ReadyEvent, MessageDeletePayload } from './client/Client';
 
 // Structures
 export { Message } from './structures/Message';
